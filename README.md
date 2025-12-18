@@ -1,15 +1,8 @@
 # LMS / LXP – Course Listing & Visibility Flow
 
-This document describes how the **React-based LMS/LXP UI**, **AEM LMS Service**, and **External Configuration (via App Builder + External DB)** work together to fetch courses and determine visibility, actions, and access deadlines for a logged-in learner.
-
----
-
-## High-Level Architecture
-
-- **Frontend**: React-based LMS / LXP
-- **Backend**: AEM LMS Service (System of Record)
-- **Configuration Layer**: App Builder + External Database
-- **Decision Layer**: Business Rules Engine
+This document describes how the React-based LMS/LXP UI, AEM LMS Service, and
+External Configuration (via App Builder + External DB) work together to fetch
+courses and determine visibility, actions, and access deadlines.
 
 ---
 
@@ -33,54 +26,47 @@ sequenceDiagram
 
     ReactLXP->>AEM: GET /courses?learnerId
     AEM->>Course: Fetch Courses, Instances, Enrollments, Progress
-    Course-->>AEM: Course + Enrollment + Progress Data
+    Course-->>AEM: Course, Enrollment, Progress Data
 
     AEM->>AppBuilder: Fetch External Configurations
-    AppBuilder->>ExtDB: Query Config & Overrides
-    ExtDB-->>AppBuilder: Visibility & Rule Config Data
+    AppBuilder->>ExtDB: Query Config and Overrides
+    ExtDB-->>AppBuilder: Config Data
     AppBuilder-->>AEM: Normalized Configuration Response
 
     Note right of ExtDB:
-        - Catalog visibility flags
-        - Role / region eligibility
-        - Re-enroll enablement
-        - Re-enroll time limits
-        - Access deadline overrides
-        - Feature flags
+        Catalog visibility flags
+        Role and region eligibility
+        Re-enroll enablement
+        Re-enroll time limits
+        Access deadline overrides
+        Feature flags
 
-    AEM->>Rules: Evaluate Course Visibility & Actions
+    AEM->>Rules: Evaluate Course Visibility and Actions
     Note right of Rules:
-        Inputs:
-        - Learner context
-        - Course metadata
-        - Enrollment & progress
-        - External configs
-        
-        Decisions:
-        - Show / hide course
-        - Allowed actions
-        - Enrollment state
+        Inputs include learner context
+        Course metadata and enrollment
+        Progress and external configs
+        Outputs include visibility and actions
 
-    Rules-->>AEM: Visible Courses + Allowed Actions
+    Rules-->>AEM: Visible Courses and Allowed Actions
 
     AEM->>Rules: Calculate Access Deadline
     Note right of Rules:
-        - Instance end date
-        - Enrollment date
-        - External override (DB)
-        - Grace period
-        - Re-enroll window
-        - Previous progress carry-forward
+        Instance end date
+        Enrollment date
+        External override rules
+        Grace period
+        Re-enroll window
+        Previous progress retention
 
-    Rules-->>AEM: Access Status & Deadline
+    Rules-->>AEM: Access Status and Deadline
 
     AEM-->>ReactLXP: Course List Response
     Note right of ReactLXP:
-        - Course metadata
-        - Progress %
-        - Access deadline
-        - Access status
-        - Actions:
-          Enroll | Re-enroll | Unenroll | View | Resume
+        Course metadata
+        Progress percentage
+        Access deadline
+        Access status
+        Allowed actions like Enroll, Re-enroll, View
 
-    ReactLXP-->>Learner: Render Courses & Actions
+    ReactLXP-->>Learner: Render Courses and Actions
