@@ -23,7 +23,6 @@ sequenceDiagram
 
     ReactLXP->>Auth: Fetch Logged-in Learner Context
     Auth-->>ReactLXP: Learner ID, Roles, Locale
-
     ReactLXP->>AEM: GET /courses?learnerId
     AEM->>Course: Fetch Courses, Instances, Enrollments, Progress
     Course-->>AEM: Course, Enrollment, Progress Data
