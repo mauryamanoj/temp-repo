@@ -1,42 +1,37 @@
-# LMS / LXP – Course Listing & Visibility Flow
+rect rgb(230,245,255)
+U->>LXP: Login
+end
 
-## Sequence Diagram – Course Fetching & Decision Making
+rect rgb(255,240,220)
+LXP->>AMEI: Authenticate User
+AMEI-->>LXP: Authentication Success
+end
 
-```mermaid
-sequenceDiagram
-    participant Learner
-    participant ReactLXP as React LXP (UI)
-    participant Auth as Auth / Identity Service
-    participant AEM as AEM LMS Service
-    participant Course as Course & Enrollment Data (AEM)
-    participant AppBuilder as App Builder Service
-    participant ExtDB as External Config DB
-    participant Rules as Business Rules Engine
+rect rgb(235,255,235)
+LXP-->>U: Redirect to Landing Page (Light Session)
+Note over LXP,U: UI shell loads immediately
+end
 
-    Learner->>ReactLXP: Open course listing page
-    ReactLXP->>Auth: Fetch logged-in learner context
-    Auth-->>ReactLXP: Learner ID and roles
+rect rgb(240,240,255)
+LXP->>AB: Async Request → Fetch Learner Token
+AB->>AMEI: Get Learner Token
+end
 
-    ReactLXP->>AEM: GET /courses
-    AEM->>Course: Fetch courses, enrollments, progress
-    Course-->>AEM: Course and enrollment data
+alt User Exists
+    AMEI-->>AB: Learner Token
+else User Not Found
+    AMEI-->>AB: User Not Found
+    AB->>AMEI: Create User
+    AMEI-->>AB: User Created
+    AB->>AMEI: Fetch Learner Token
+    AMEI-->>AB: Learner Token
+end
 
-    AEM->>AppBuilder: Fetch external configurations
-    AppBuilder->>ExtDB: Query config data
-    ExtDB-->>AppBuilder: Configuration records
-    AppBuilder-->>AEM: Normalized configs
+rect rgb(230,255,245)
+AB-->>LXP: Return Learner Token
+LXP-->>U: Load Courses
+end
 
-    Note right of ExtDB: Catalog visibility flags<br/>Role and region eligibility<br/>Re-enroll enablement<br/>Access deadline overrides<br/>Feature flags
-
-    AEM->>Rules: Evaluate visibility and actions
-    Note right of Rules: Uses learner context<br/>Enrollment state<br/>Progress data<br/>External configuration
-
-    Rules-->>AEM: Visible courses and allowed actions
-
-    AEM->>Rules: Calculate access deadline
-    Note right of Rules: Instance end date<br/>Enrollment date<br/>Grace period<br/>Re-enroll window
-
-    Rules-->>AEM: Access status and deadline
-
-    AEM-->>ReactLXP: Course list with actions
-    ReactLXP-->>Learner: Render courses and CTAs
+rect rgb(255,235,235)
+AB->>AMEI: Async PATCH User Metadata
+end
